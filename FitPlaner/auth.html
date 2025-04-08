@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles/auth.css">
+    <title>FitPlaner</title>
+</head>
+<body>
+    <main>
+        <section class="form login-form">
+            <h1 class="form__title">Log in to your Account</h1>
+            <p class="form__description">Welcome back! Please, enter your information</p>
+            <form>
+                <label class="form-control__label">Email</label>
+                <input type="email" class="form-control">
+        
+                <label class="form-control__label">Password</label>
+                <div class="password-field">
+                    <input type="password" class="form-control" minlength="4" id="password">
+                   
+                </div>
+
+           
+                <button type="submit" class="form__submit" id="login-submit">Log In</button>
+            </form>
+            <p class="form__footer">
+                Don't have an account?<br> <a href="#" id="show-signup">Create an account</a>
+            </p>
+        </section>
+
+        <section class="form signup-form" style="display: none;">
+            <h1 class="form__title">Create an Account</h1>
+            <p class="form__description">Sign up to get started</p>
+
+            <form>
+                <label class="form-control__label">Full Name</label>
+                <input type="text" class="form-control">
+
+                <label class="form-control__label">Email</label>
+                <input type="email" class="form-control">
+        
+                <label class="form-control__label">Password</label>
+                <div class="password-field">
+                    <input type="password" class="form-control" minlength="4" id="signup-password">
+                </div>
+        
+                <button type="submit" class="form__submit" id="signup-submit">Sign Up</button>
+            </form>
+        
+            <p class="form__footer">
+                Already have an account?<br> <a href="#" id="show-login">Log In</a>
+            </p>
+        </section>
+        
+        <section class="form__animation">
+            <div id="ball">
+                <div class="ball">
+                    <div id="face">
+                        <div class="ball__eyes">
+                            <div class="eye_wrap"><span class="eye"></span></div>
+                            <div class="eye_wrap"><span class="eye"></span></div>
+                        </div>
+                        <div class="ball__mouth"></div>
+                    </div>
+                </div>
+              </div>
+              <div class="ball__shadow"></div>
+        </section>
+    </main>
+    <script type="module" src="/js/auth.js"></script>
+</body>
+</html>
