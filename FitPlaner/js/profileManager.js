@@ -4,6 +4,8 @@ import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13
 class ProfileManager {
   constructor() {
     this.createPhotoModal();
+    this.maxPhotoSize = 1; // Max recommended size in MB for Firestore documents
+    // No limit on photo count
   }
 
   createPhotoModal() {
@@ -248,6 +250,49 @@ class ProfileManager {
     await this.saveProgressPhotos(photos); 
     this.displayPhotoGallery(photos); 
   }
+
+  /**
+   * Validates photo upload against size limits for Firestore compatibility
+   * @param {FileList} files - Files to validate
+   * @returns {boolean} Whether the upload is valid
+   */
+  validatePhotoUpload(files) {
+    // Check individual file sizes (Firestore has a 1MB document size limit)
+    for (const file of files) {
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > this.maxPhotoSize) {
+        const warningMsg = `File "${file.name}" is ${fileSizeMB.toFixed(1)}MB. 
+        Firestore has a 1MB document limit, and Base64 encoding increases size by ~33%. 
+        This may cause upload failures. Consider resizing the image before upload.`;
+        
+        alert(warningMsg);
+        return false; // Prevent upload of files that will exceed Firestore limits
+      }
+    }
+
+    return true;
+  }
+}
+
+/**
+ * Creates and adds the photo upload info label
+ */
+function createPhotoUploadLabel() {
+  const fileInput = document.getElementById('progress-photos');
+  if (!fileInput) return;
+  
+  // Create label element for upload guidance
+  const uploadLimitLabel = document.createElement('div');
+  uploadLimitLabel.className = 'upload-limit-info';
+  uploadLimitLabel.innerHTML = `
+    <p><i class="fa-solid fa-circle-info"></i> Upload information: 
+      <span>Unlimited number of photos</span> | 
+      <span>Maximum ${profileManager.maxPhotoSize}MB per photo (Firestore limitation)</span>
+    </p>
+  `;
+  
+  // Insert the label after the file input element
+  fileInput.parentNode.insertBefore(uploadLimitLabel, fileInput.nextSibling);
 }
 
 document.getElementById('save-photos').addEventListener('click', async () => {
@@ -259,21 +304,26 @@ document.getElementById('save-photos').addEventListener('click', async () => {
     return;
   }
 
+  const user = firebaseService.getCurrentUser();
+  const userDocRef = doc(firebaseService.getDb(), 'users', user.uid);
+  const userSnapshot = await getDoc(userDocRef);
+  let existingPhotos = [];
+
+  if (userSnapshot.exists() && userSnapshot.data().progressPhotos) {
+    existingPhotos = userSnapshot.data().progressPhotos;
+  }
+
+  // Validate files against Firestore limitations
+  if (!profileManager.validatePhotoUpload(files)) {
+    return;
+  }
+
   const photos = [];
   for (const file of files) {
     const reader = new FileReader();
     reader.onload = async (event) => {
       photos.push(event.target.result); // Base64 string
       if (photos.length === files.length) {
-        const user = firebaseService.getCurrentUser();
-        const userDocRef = doc(firebaseService.getDb(), 'users', user.uid);
-        const userSnapshot = await getDoc(userDocRef);
-        let existingPhotos = [];
-
-        if (userSnapshot.exists() && userSnapshot.data().progressPhotos) {
-          existingPhotos = userSnapshot.data().progressPhotos;
-        }
-
         const updatedPhotos = [...existingPhotos, ...photos];
         await profileManager.saveProgressPhotos(updatedPhotos);
         profileManager.displayPhotoGallery(updatedPhotos); 
@@ -286,7 +336,8 @@ document.getElementById('save-photos').addEventListener('click', async () => {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await profileManager.loadProfile();  
-  await profileManager.loadProgressPhotos();  
+  await profileManager.loadProgressPhotos();
+  createPhotoUploadLabel();
 });
 
 const style = document.createElement('style');
@@ -391,6 +442,31 @@ style.textContent = `
 
     .photo-modal-close:hover {
         color: #bbb;
+    }
+
+    .upload-limit-info {
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-left: 4px solid #dc3545;
+        color: #495057;
+        font-size: 14px;
+        border-radius: 4px;
+    }
+
+    .upload-limit-info p {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .upload-limit-info i {
+        color: #dc3545;
+    }
+
+    .upload-limit-info span {
+        font-weight: 500;
     }
 `;
 document.head.appendChild(style);
